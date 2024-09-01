@@ -1,0 +1,3 @@
+copy and paste this in command prompt
+pip install python flask flask_cors pandas yfinance plotly jupyterlab flask_wdf 
+pip install numpy==1.26.4
