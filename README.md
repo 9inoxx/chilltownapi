@@ -1,3 +1,0 @@
-# chilltownapi
-
-read requirements.txt 
