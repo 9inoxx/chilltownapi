@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChillTown API</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .dark-mode {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        .dark-mode .navbar, .dark-mode .btn, .dark-mode .form-control {
+            background-color: #333;
+            color: #e0e0e0;
+        }
+        .dark-mode .chart-container {
+            background-color: #1e1e1e;
+        }
+        .toggle-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: #333;
+            color: #e0e0e0;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+            box-sizing: border-box; /* Ensure padding and border are included in the width and height */
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px; /* Adjust height for smaller screens */
+            }
+        }
+    </style>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <button id="toggle-btn" class="toggle-btn">Dark Mode</button>
+    <div class="container">
+        <h1 class="mt-5">ChillTown API</h1>
+        <div class="form-group">
+            <label for="ticker">Enter Stock Ticker:</label>
+            <input type="text" id="ticker" class="form-control" placeholder="SPY">
+            <button class="btn btn-primary mt-2" onclick="fetchData()">Get Data</button>
+            <button class="btn btn-success mt-2" onclick="fetchMeanReversion()">Get Mean Reversion Probability</button>
+        </div>
+        <div id="chart" class="chart-container"></div>
+        <div id="mean-reversion" class="chart-container"></div>
+    </div>
+    <script src="/static/scripts/app.js"></script>
+    <script>
+        const toggleBtn = document.getElementById('toggle-btn');
+        const body = document.body;
+
+        // Load user preference from localStorage
+        if (localStorage.getItem('dark-mode') === 'enabled') {
+            body.classList.add('dark-mode');
+            toggleBtn.textContent = 'Light Mode';
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            if (body.classList.contains('dark-mode')) {
+                toggleBtn.textContent = 'Light Mode';
+                localStorage.setItem('dark-mode', 'enabled');
+            } else {
+                toggleBtn.textContent = 'Dark Mode';
+                localStorage.setItem('dark-mode', 'disabled');
+            }
+        });
+
+        function fetchData() {
+            const ticker = document.getElementById('ticker').value;
+            fetch(`/data/${ticker}`)
+                .then(response => response.json())
+                .then(data => {
+                    const dates = data.map(d => d.Date);
+                    const opens = data.map(d => d.Open);
+                    const highs = data.map(d => d.High);
+                    const lows = data.map(d => d.Low);
+                    const closes = data.map(d => d.Close);
+
+                    // Create candlestick chart
+                    const chartData = [{
+                        x: dates,
+                        open: opens,
+                        high: highs,
+                        low: lows,
+                        close: closes,
+                        type: 'candlestick',
+                        name: ticker
+                    }];
+                    const layout = {
+                        title: `${ticker} Candlestick Chart`,
+                        xaxis: { title: 'Date' },
+                        yaxis: { title: 'Price' },
+                        autosize: true,
+                        margin: { t: 40, b: 40, l: 60, r: 10 } // Adjust margins as needed
+                    };
+                    Plotly.react('chart', chartData, layout);
+                });
+        }
+
+        function fetchMeanReversion() {
+            const ticker = document.getElementById('ticker').value;
+            fetch(`/mean_reversion/${ticker}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Display mean reversion probability
+                    const meanReversionDiv = document.getElementById('mean-reversion');
+                    meanReversionDiv.innerHTML = `<h3>Probability of Mean Reversion: ${data.probability_mean_reversion}</h3>`;
+                });
+        }
+    </script>
+</body>
+</html>
